@@ -1,6 +1,7 @@
 // /client/App.js
 import React, { Component } from "react";
 import axios from "axios";
+import ThreeContainer from "./ThreeContainer";
 
 class App extends Component {
   // initialize our state
@@ -156,6 +157,7 @@ class App extends Component {
             UPDATE
           </button>
         </div>
+        <ThreeContainer />
       </div>
     );
   }
