@@ -5,14 +5,23 @@ const bodyParser = require("body-parser");
 const logger = require("morgan");
 const Data = require("./data");
 
-const API_PORT = 3001;
 const app = express();
 app.use(cors());
 const router = express.Router();
 
+const dotenv = require("dotenv");
+dotenv.config();
+const { API_PORT, DB_USERNAME, DB_PASSWORD } = process.env;
+console.log("port is ", API_PORT);
+console.log("user is ", DB_USERNAME);
+
 // this is our MongoDB database
 const dbRoute =
-  "mongodb+srv://lhwlyd:LhwLyd12@practice-nmjo9.azure.mongodb.net/test?retryWrites=true";
+  "mongodb+srv://" +
+  DB_USERNAME +
+  ":" +
+  DB_PASSWORD +
+  "@practice-nmjo9.azure.mongodb.net/test?retryWrites=true";
 
 // connects our back end code with the database
 mongoose.connect(
