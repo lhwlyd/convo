@@ -22,6 +22,16 @@ export default player => {
       // left arrow key
       camera.rotation.y += player.turnspeed;
     }
+    if (keyboard[38]) {
+      // left arrow key
+      camera.rotation.x -= player.turnspeed;
+      camera.rotation.z -= player.turnspeed;
+    }
+    if (keyboard[40]) {
+      // left arrow key
+      camera.rotation.x += player.turnspeed;
+      camera.rotation.z += player.turnspeed;
+    }
 
     /* WASD Movement */
     if (keyboard[87]) {

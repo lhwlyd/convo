@@ -2,6 +2,7 @@ import * as THREE from "three";
 import SceneSubject from "./SceneSubject";
 import GeneralLights from "./GeneralLights";
 import UserControl from "./UserControl";
+import PlayerInit from "./PlayerInit";
 
 export default canvas => {
   const clock = new THREE.Clock();
@@ -17,13 +18,14 @@ export default canvas => {
     y: 0
   };
 
-  let player = { height: 1.8, speed: 1, turnspeed: Math.PI * 0.02 };
-
   const scene = buildScene();
   addFloor(scene);
   const renderer = buildRender(screenDimensions);
   addLight(scene);
   const camera = buildCamera(screenDimensions);
+
+  const player = PlayerInit(camera, scene);
+
   const usercontrol = new UserControl(player);
   const sceneSubjects = createSceneSubjects(scene);
 
@@ -36,10 +38,10 @@ export default canvas => {
 
   function addLight(scene) {
     // LIGHTS
-    let ambientLight = new THREE.AmbientLight(0x00ff00, 0.2);
+    let ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
     scene.add(ambientLight);
 
-    let light = new THREE.PointLight(0xffffff, 0.8, 18);
+    let light = new THREE.PointLight(0x000000, 0.8, 18);
     light.position.set(-3, 6, -3);
     light.castShadow = true;
     // Will not light anything closer than 0.1 units or further than 25 units
@@ -59,6 +61,7 @@ export default canvas => {
     plane.receiveShadow = true;
     scene.add(plane);
   }
+
   function buildRender({ width, height }) {
     const renderer = new THREE.WebGLRenderer({
       canvas: canvas,
@@ -89,8 +92,6 @@ export default canvas => {
       nearPlane,
       farPlane
     );
-    camera.position.set(0, player.height, -5);
-    camera.lookAt(new THREE.Vector3(0, player.height, 0));
 
     return camera;
   }
