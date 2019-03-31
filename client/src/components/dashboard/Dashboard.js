@@ -3,8 +3,20 @@ import PropTypes from "prop-types";
 import { connect } from "react-redux";
 import { logoutUser } from "../../actions/authActions";
 import ThreeContainer from "../Three/ThreeContainer";
+import { subscribeToTimer } from "../Three/SocketConnection";
 
 class Dashboard extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      timestamp: "no timestamp yet"
+    };
+    subscribeToTimer((err, timestamp) =>
+      this.setState({
+        timestamp
+      })
+    );
+  }
   onLogoutClick = e => {
     e.preventDefault();
     this.props.logoutUser();
@@ -34,7 +46,11 @@ class Dashboard extends Component {
             >
               Logout
             </button>
-
+            <div className="App">
+              <p className="App-intro">
+                Reading time from the server: {this.state.timestamp}
+              </p>
+            </div>
             <ThreeContainer />
           </div>
         </div>

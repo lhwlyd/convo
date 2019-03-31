@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const express = require("express");
-var cors = require("cors");
+const cors = require("cors");
 const bodyParser = require("body-parser");
 const logger = require("morgan");
 
@@ -14,6 +14,10 @@ app.use(cors());
 const dotenv = require("dotenv");
 dotenv.config();
 const { API_PORT, DB_USERNAME, DB_PASSWORD } = process.env;
+
+/* Socket.io */
+const mySocket = require("./mySocket");
+mySocket.setup(8000);
 
 // this is our MongoDB database
 const dbRoute =
