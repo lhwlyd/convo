@@ -1,7 +1,15 @@
-export default player => {
+import * as THREE from "three";
+
+export default (player, camera) => {
   window.addEventListener("keydown", keyDown);
   window.addEventListener("keyup", keyUp);
+  camera.position.set(
+    player.playerMesh.position.x,
+    player.playerMesh.position.y + 1,
+    -5
+  );
 
+  camera.lookAt(new THREE.Vector3(0, 1, 0));
   let keyboard = {};
   //this.checkKey = checkKey.bind(this);
 

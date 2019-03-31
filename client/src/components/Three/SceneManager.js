@@ -2,15 +2,16 @@ import * as THREE from "three";
 import SceneSubject from "./SceneSubject";
 import GeneralLights from "./GeneralLights";
 import UserControl from "./UserControl";
-import PlayerInit from "./PlayerInit";
+import PlayerControls from "./NewPlayerControl";
+import Player from "./Player";
 
-export default canvas => {
+export default (canvas, auth) => {
   const clock = new THREE.Clock();
   const origin = new THREE.Vector3(0, 0, 0);
 
   const screenDimensions = {
-    width: canvas.width,
-    height: canvas.height
+    width: window.innerWidth / 2,
+    height: window.innerHeight / 2
   };
 
   const mousePosition = {
@@ -19,14 +20,16 @@ export default canvas => {
   };
 
   const scene = buildScene();
-  addFloor(scene);
   const renderer = buildRender(screenDimensions);
-  addLight(scene);
   const camera = buildCamera(screenDimensions);
 
-  const player = PlayerInit(camera, scene);
+  // Main Player
+  const player = new Player(camera, scene, auth.name);
+  player.isMainPlayer = true;
+  player.init();
+  // player.setOrientation(new THREE.Vector3(1, 1, 1), new THREE.Vector3(0, 0, 0));
+  // const usercontrol = new UserControl(player, camera);
 
-  const usercontrol = new UserControl(player);
   const sceneSubjects = createSceneSubjects(scene);
 
   function buildScene() {
@@ -34,32 +37,6 @@ export default canvas => {
     scene.background = new THREE.Color("#000000");
 
     return scene;
-  }
-
-  function addLight(scene) {
-    // LIGHTS
-    let ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
-    scene.add(ambientLight);
-
-    let light = new THREE.PointLight(0x000000, 0.8, 18);
-    light.position.set(-3, 6, -3);
-    light.castShadow = true;
-    // Will not light anything closer than 0.1 units or further than 25 units
-    light.shadow.camera.near = 0.1;
-    light.shadow.camera.far = 25;
-    scene.add(light);
-  }
-
-  function addFloor(scene) {
-    var geo = new THREE.PlaneGeometry(100, 100, 8, 8);
-    var mat = new THREE.MeshPhongMaterial({
-      color: 0xffffff,
-      wireframe: false
-    });
-    var plane = new THREE.Mesh(geo, mat);
-    plane.rotateX(-Math.PI / 2);
-    plane.receiveShadow = true;
-    scene.add(plane);
   }
 
   function buildRender({ width, height }) {
@@ -84,7 +61,7 @@ export default canvas => {
   function buildCamera({ width, height }) {
     const aspectRatio = width / height;
     const fieldOfView = 60;
-    const nearPlane = 0.1;
+    const nearPlane = 1;
     const farPlane = 1000;
     const camera = new THREE.PerspectiveCamera(
       fieldOfView,
@@ -92,7 +69,7 @@ export default canvas => {
       nearPlane,
       farPlane
     );
-
+    camera.position.z = 5;
     return camera;
   }
 
@@ -109,14 +86,10 @@ export default canvas => {
       sceneSubjects[i].update(elapsedTime);
 
     //updateCameraPositionRelativeToMouse();
-    usercontrol.checkKey(camera);
+    if (player.controls) {
+      player.controls.update();
+    }
     renderer.render(scene, camera);
-  }
-
-  function updateCameraPositionRelativeToMouse() {
-    camera.position.x += (mousePosition.x * 0.01 - camera.position.x) * 0.01;
-    camera.position.y += (-(mousePosition.y * 0.01) - camera.position.y) * 0.01;
-    camera.lookAt(origin);
   }
 
   function onWindowResize() {

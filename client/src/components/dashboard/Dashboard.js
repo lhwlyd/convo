@@ -51,7 +51,7 @@ class Dashboard extends Component {
                 Reading time from the server: {this.state.timestamp}
               </p>
             </div>
-            <ThreeContainer />
+            <ThreeContainer auth={this.props.auth} />
           </div>
         </div>
       </div>
