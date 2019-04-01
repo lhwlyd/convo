@@ -1,6 +1,6 @@
 import * as THREE from "three";
 
-let PlayerControls = function(camera, player, domElement) {
+let PlayerControls = function(camera, player, domElement, ref) {
   this.camera = camera;
   this.player = player;
   this.domElement = domElement !== undefined ? domElement : document;
@@ -379,6 +379,7 @@ let PlayerControls = function(camera, player, domElement) {
     event = event || window.event;
 
     keyState[event.keyCode || event.which] = true;
+    ref.onKeyDown(event);
   }
 
   function onKeyUp(event) {

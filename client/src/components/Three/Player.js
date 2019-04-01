@@ -1,5 +1,6 @@
 import * as THREE from "three";
-import PlayerControls from "./NewPlayerControl";
+import PlayerControls from "./PlayerControlInterface";
+import { subscribeToUserMoveControls } from "./SocketConnection";
 
 let Player = function(camera, scene, id) {
   this.height = 1.8;
@@ -12,7 +13,7 @@ let Player = function(camera, scene, id) {
   this.controls = null;
 
   // Build character ball
-  let playerGeometry = new THREE.CylinderGeometry(1, 1, 5, 8);
+  let playerGeometry = new THREE.CylinderGeometry(1, 1, 2, 8);
   let playerMaterial = new THREE.MeshBasicMaterial({
     color: 0x7777ff,
     wireframe: false
@@ -30,7 +31,10 @@ let Player = function(camera, scene, id) {
 
     if (scope.isMainPlayer) {
       scope.controls = new PlayerControls(scope.camera, scope.playerMesh);
+
       scope.controls.init();
+
+      subscribeToUserMoveControls(scope.controls, scope.scene);
     }
   };
 
@@ -40,18 +44,6 @@ let Player = function(camera, scene, id) {
       scope.playerMesh.rotation.copy(rotation);
     }
   };
-
-  // playerMesh.onBeforeRender = function(
-  //   renderer,
-  //   scene,
-  //   camera,
-  //   geometry,
-  //   material,
-  //   group
-  // ) {
-  //   var pos = camera.position;
-  //   this.position.set(pos.x, pos.y - 100, pos.z);
-  // };
 
   return this;
 };

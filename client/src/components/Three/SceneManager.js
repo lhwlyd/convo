@@ -1,8 +1,6 @@
 import * as THREE from "three";
 import SceneSubject from "./SceneSubject";
 import GeneralLights from "./GeneralLights";
-import UserControl from "./UserControl";
-import PlayerControls from "./NewPlayerControl";
 import Player from "./Player";
 
 export default (canvas, auth) => {
