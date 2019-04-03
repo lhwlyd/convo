@@ -27,8 +27,8 @@ function subscribeToUserMoveControls(controls, scene) {
   });
 
   //On connection server sends the client his ID
-  socket.on("introduction", (_id, _clientNum, _ids) => {
-    console.log("hi");
+  socket.on("introduction", (_id, _clientNum, _clients) => {
+    let _ids = Object.keys(_clients);
     for (let i = 0; i < _ids.length; i++) {
       if (_ids[i] != _id) {
         clients[_ids[i]] = {
@@ -45,8 +45,13 @@ function subscribeToUserMoveControls(controls, scene) {
           )
         };
 
+        console.log(_clients);
         //Add initial users to the scene
-        scene.add(clients[_ids[i]].mesh);
+        let otherMesh = clients[_ids[i]].mesh;
+        scene.add(otherMesh);
+        otherMesh.position.x = _clients[_ids[i]].position[0];
+        otherMesh.position.y = _clients[_ids[i]].position[1];
+        otherMesh.position.z = _clients[_ids[i]].position[2];
       }
     }
 
@@ -77,8 +82,9 @@ function subscribeToUserMoveControls(controls, scene) {
         )
       };
 
-      //Add initial users to the scene
+      //Add new user to the scene
       scene.add(clients[_id].mesh);
+      console.log(clients);
     }
   });
 
@@ -93,6 +99,10 @@ function subscribeToUserMoveControls(controls, scene) {
   });
 
   socket.on("connect", () => {});
+
+  socket.on("alreadyInUse", () => {
+    alert("You're already logged in somewhere else!");
+  });
 
   //Update when one of the users moves in space
   socket.on("userPositions", _clientProps => {

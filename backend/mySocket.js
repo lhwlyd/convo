@@ -17,21 +17,6 @@ module.exports = {
             io.engine.clientsCount +
             " clients connected"
         );
-        //Make sure to send the client it's ID
-        client.emit(
-          "introduction",
-          client.id,
-          io.engine.clientsCount,
-          Object.keys(clients)
-        );
-        //Update everyone that the number of users has changed
-        io.sockets.emit(
-          "newUserConnected",
-          io.engine.clientsCount,
-          client.id,
-          Object.keys(clients)
-        );
-
         client.on("move", pos => {
           clients[client.id].position = pos;
           io.sockets.emit("userPositions", clients);
@@ -52,27 +37,20 @@ module.exports = {
           console.log(
             "User " +
               client.id +
-              " dissconeted, there are " +
+              " disconnected, there are " +
               io.engine.clientsCount +
               " clients connected"
           );
         });
-      });
-      io.listen(port);
-      console.log("listening on port ", port);
-    }
-
-    if (port === 8001) {
-      io.on("connection", client => {
-        client.on("subscribeToTimer", interval => {
-          console.log(
-            "client is subscribing to timer with interval ",
-            interval
-          );
-          setInterval(() => {
-            client.emit("timer", new Date());
-          }, interval);
-        });
+        //Make sure to send the client it's ID
+        client.emit("introduction", client.id, io.engine.clientsCount, clients);
+        //Update everyone that the number of users has changed
+        io.sockets.emit(
+          "newUserConnected",
+          io.engine.clientsCount,
+          client.id,
+          Object.keys(clients)
+        );
       });
       io.listen(port);
       console.log("listening on port ", port);

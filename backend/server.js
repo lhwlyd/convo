@@ -17,8 +17,9 @@ const { API_PORT, DB_USERNAME, DB_PASSWORD } = process.env;
 
 /* Socket.io */
 const mySocket = require("./mySocket");
+const timerSocket = require("./timerSocket");
 mySocket.setup(8000);
-mySocket.setup(8001);
+timerSocket.setup(8001);
 
 // this is our MongoDB database
 const dbRoute =
