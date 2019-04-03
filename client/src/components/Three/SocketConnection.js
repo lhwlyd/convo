@@ -1,15 +1,18 @@
 import openSocket from "socket.io-client";
 import * as THREE from "three";
 
-const socket = openSocket("http://localhost:8000");
+let socket_timer;
+let socket;
 
 function subscribeToTimer(cb) {
   // For testing
-  socket.on("timer", timestamp => cb(null, timestamp));
-  socket.emit("subscribeToTimer", 100);
+  socket_timer = openSocket("http://localhost:8001");
+  socket_timer.on("timer", timestamp => cb(null, timestamp));
+  socket_timer.emit("subscribeToTimer", 100);
 }
 
 function subscribeToUserMoveControls(controls, scene) {
+  socket = openSocket("http://localhost:8000");
   //One WebGL context to rule them all !
   let id;
   let instances = [];
@@ -25,6 +28,7 @@ function subscribeToUserMoveControls(controls, scene) {
 
   //On connection server sends the client his ID
   socket.on("introduction", (_id, _clientNum, _ids) => {
+    console.log("hi");
     for (let i = 0; i < _ids.length; i++) {
       if (_ids[i] != _id) {
         clients[_ids[i]] = {
@@ -55,12 +59,8 @@ function subscribeToUserMoveControls(controls, scene) {
   socket.on("newUserConnected", (clientCount, _id, _ids) => {
     console.log(clientCount + " clients connected");
     let alreadyHasUser = false;
-    for (let i = 0; i < Object.keys(clients).length; i++) {
-      if (Object.keys(clients)[i] == _id) {
-        alreadyHasUser = true;
-        break;
-      }
-    }
+    alreadyHasUser = Object.values(clients).indexOf(_id) > -1;
+
     if (_id != id && !alreadyHasUser) {
       console.log("A new user connected with the id: " + _id);
       clients[_id] = {
@@ -99,13 +99,14 @@ function subscribeToUserMoveControls(controls, scene) {
     // console.log('Positions of all users are ', _clientProps, id);
     // console.log(Object.keys(_clientProps)[0] == id);
     for (let i = 0; i < Object.keys(_clientProps).length; i++) {
-      if (Object.keys(_clientProps)[i] != id) {
+      let _id = Object.keys(_clientProps)[i];
+      if (_id !== id) {
         //Store the values
-        let oldPos = clients[Object.keys(_clientProps)[i]].mesh.position;
-        let newPos = _clientProps[Object.keys(_clientProps)[i]].position;
+        let oldPos = clients[_id].mesh.position;
+        let newPos = _clientProps[_id].position;
 
-        let oldRot = clients[Object.keys(_clientProps)[i]].mesh.rotation;
-        let newRot = _clientProps[Object.keys(_clientProps)[i]].rotation;
+        // let oldRot = clients[_id].mesh.rotation;
+        // let newRot = _clientProps[_id].rotation;
 
         //Create a vector 3 and lerp the new values with the old values
         let lerpedPos = new THREE.Vector3();
@@ -114,12 +115,8 @@ function subscribeToUserMoveControls(controls, scene) {
         lerpedPos.z = THREE.Math.lerp(oldPos.z, newPos[2], 0.3);
 
         //Set the position
-        clients[Object.keys(_clientProps)[i]].mesh.position.set(
-          lerpedPos.x,
-          lerpedPos.y,
-          lerpedPos.z
-        );
-        clients[Object.keys(_clientProps)[i]].mesh.position.set(newRot);
+        clients[_id].mesh.position.set(lerpedPos.x, lerpedPos.y, lerpedPos.z);
+        //clients[Object.keys(_clientProps)[i]].mesh.position.set(newRot);
       }
     }
   });
