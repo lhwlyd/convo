@@ -2,6 +2,7 @@ import * as THREE from "three";
 import SceneSubject from "./SceneSubject";
 import GeneralLights from "./GeneralLights";
 import Player from "./Player";
+import createCORSRequest from "../../utils/createCORSRequest";
 
 export default (canvas, auth) => {
   const clock = new THREE.Clock();
@@ -20,6 +21,28 @@ export default (canvas, auth) => {
   const scene = buildScene();
   const renderer = buildRender(screenDimensions);
   const camera = buildCamera(screenDimensions);
+
+  // Audio
+  let listener = new THREE.AudioListener();
+  camera.add(listener);
+
+  navigator.mediaDevices
+    .getUserMedia({ audio: true, video: false })
+    .then(handleSuccess);
+
+  function handleSuccess(stream) {
+    var audio = new THREE.Audio(listener);
+
+    var context = listener.context;
+    var source = context.createMediaStreamSource(stream);
+    audio.setNodeSource(source);
+  }
+
+  // create a global audio source
+  let sound = new THREE.Audio(listener);
+  //let localStream = stream;
+  // // load a sound and set it as the Audio object's buffer
+  let audioLoader = new THREE.AudioLoader();
 
   // Main Player
   const player = new Player(camera, scene, auth.name);
