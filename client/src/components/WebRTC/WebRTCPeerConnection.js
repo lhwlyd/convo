@@ -14,9 +14,6 @@ export default class WebRTCPeerConnection extends React.Component {
   localVideoRef = React.createRef();
   remoteVideoRef = React.createRef();
 
-  localAudioRef = React.createRef();
-  remoteAudioRef = React.createRef();
-
   start = () => {
     this.setState({
       startDisabled: true
@@ -36,6 +33,11 @@ export default class WebRTCPeerConnection extends React.Component {
       callDisabled: false,
       localStream: stream
     });
+  };
+
+  gotRemoteStream = stream => {
+    console.log("got remote stream", stream);
+    this.remoteVideoRef.current.srcObject = stream.streams[0];
   };
 
   call = () => {
@@ -123,6 +125,8 @@ export default class WebRTCPeerConnection extends React.Component {
           )
       );
 
+    console.log(pc1);
+
     pc2
       .setLocalDescription(desc)
       .then(
@@ -136,14 +140,13 @@ export default class WebRTCPeerConnection extends React.Component {
   };
 
   onIceStateChange = (pc, e) => {
-    console.log("on ice state change:", pc, e);
+    //console.log("on ice state change:", pc, e);
   };
 
   onIceCandidate = (pc, event) => {
     let { pc1, pc2 } = this.state;
 
     let otherPc = pc === pc1 ? pc2 : pc1;
-
     otherPc
       .addIceCandidate(event.candidate)
       .then(
