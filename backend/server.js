@@ -21,10 +21,11 @@ const timerSocket = require("./timerSocket");
 mySocket.setup(8000);
 timerSocket.setup(8001);
 
+const RTCSocket = require("./RTCSocket");
+
 // this is our MongoDB database
-const dbRoute =
-  "mongodb+srv://" +
-  DB_USERNAME +
+const dbRoute = "mongodb+srv://";
+DB_USERNAME +
   ":" +
   DB_PASSWORD +
   "@practice-nmjo9.azure.mongodb.net/test?retryWrites=true";

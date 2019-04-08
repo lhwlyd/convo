@@ -15,8 +15,7 @@ function subscribeToUserMoveControls(controls, scene) {
   socket = openSocket("http://localhost:8000");
   //One WebGL context to rule them all !
   let id;
-  let instances = [];
-  let clients = new Object();
+  let clients = {};
 
   controls.on("userMoved", () => {
     socket.emit("move", [

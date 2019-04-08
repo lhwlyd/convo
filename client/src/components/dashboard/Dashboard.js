@@ -4,7 +4,7 @@ import { connect } from "react-redux";
 import { logoutUser } from "../../actions/authActions";
 import ThreeContainer from "../Three/ThreeContainer";
 import { subscribeToTimer } from "../Three/SocketConnection";
-import WebRTCPeerConnection from "../WebRTC/WebRTCPeerConnection";
+import WebRTCPeerConnection from "../WebRTC/NewRTC";
 
 class Dashboard extends Component {
   constructor(props) {

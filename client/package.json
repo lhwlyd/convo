@@ -7,6 +7,7 @@
     "classnames": "^2.2.6",
     "concurrently": "^4.1.0",
     "event-emitter-es6": "^1.1.5",
+    "freeice": "^2.2.2",
     "jwt-decode": "^2.2.0",
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
@@ -15,8 +16,11 @@
     "react-scripts": "2.1.8",
     "redux": "^4.0.1",
     "redux-thunk": "^2.3.0",
+    "rtc-quickconnect": "^7.2.0",
+    "simple-peer": "^9.3.0",
     "socket.io-client": "^2.2.0",
-    "three": "^0.103.0"
+    "three": "^0.103.0",
+    "wrtc": "^0.3.7"
   },
   "scripts": {
     "start": "react-scripts start",
