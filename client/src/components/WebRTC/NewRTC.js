@@ -5,10 +5,14 @@ const quickconnect = require("rtc-quickconnect");
 var Peer = require("simple-peer");
 var wrtc = require("wrtc");
 
+let pc;
 let socket;
 let localPeerConnection;
 let remotePeerConnection;
 let localStream, remoteStream;
+var isChannelReady = false;
+var isStarted = false;
+let isInitiator = false;
 
 // Set up to exchange only video.
 const offerOptions = {
@@ -25,6 +29,14 @@ const qcOpts = {
   iceServers: freeice()
 };
 
+var pcConfig = {
+  iceServers: [
+    {
+      urls: "stun:stun.l.google.com:19302"
+    }
+  ]
+};
+
 // Define helper functions.
 
 // Gets the "other" peer connection.
@@ -39,6 +51,11 @@ function getPeerName(peerConnection) {
   return peerConnection === localPeerConnection
     ? "localPeerConnection"
     : "remotePeerConnection";
+}
+
+function sendMessage(message) {
+  console.log("Client sending message: ", message);
+  socket.emit("message", message);
 }
 
 // Logs an action (text) and the time when it happened on the console.
@@ -63,8 +80,6 @@ export default class WebRTCPeerConnection extends React.Component {
     window.room = prompt("Enter room name:");
 
     socket = openSocket("http://localhost:8080");
-
-    let isInitiator = false;
 
     if (window.room !== "") {
       console.log("Message from client: Asking to join room " + window.room);
@@ -91,28 +106,29 @@ export default class WebRTCPeerConnection extends React.Component {
       console.log.apply(console, array);
     });
 
-    // socket.on("message", function(message) {
-    //   console.log("Client received message:", message);
-    //   if (message === "got user media") {
-    //     maybeStart();
-    //   } else if (message.type === "offer") {
-    //     if (!isInitiator && !isStarted) {
-    //       maybeStart();
-    //     }
-    //     pc.setRemoteDescription(new RTCSessionDescription(message));
-    //     doAnswer();
-    //   } else if (message.type === "answer" && isStarted) {
-    //     pc.setRemoteDescription(new RTCSessionDescription(message));
-    //   } else if (message.type === "candidate" && isStarted) {
-    //     var candidate = new RTCIceCandidate({
-    //       sdpMLineIndex: message.label,
-    //       candidate: message.candidate
-    //     });
-    //     pc.addIceCandidate(candidate);
-    //   } else if (message === "bye" && isStarted) {
-    //     handleRemoteHangup();
-    //   }
-    // });
+    // This client receives a message
+    socket.on("message", message => {
+      console.log("Client received message:", message);
+      if (message === "got user media") {
+        this.maybeStart();
+      } else if (message.type === "offer") {
+        if (!isInitiator && !isStarted) {
+          this.maybeStart();
+        }
+        pc.setRemoteDescription(new RTCSessionDescription(message));
+        this.doAnswer();
+      } else if (message.type === "answer" && isStarted) {
+        pc.setRemoteDescription(new RTCSessionDescription(message));
+      } else if (message.type === "candidate" && isStarted) {
+        var candidate = new RTCIceCandidate({
+          sdpMLineIndex: message.label,
+          candidate: message.candidate
+        });
+        pc.addIceCandidate(candidate);
+      } else if (message === "bye" && isStarted) {
+        this.handleRemoteHangup();
+      }
+    });
   }
 
   localVideoRef = React.createRef();
@@ -132,11 +148,14 @@ export default class WebRTCPeerConnection extends React.Component {
   };
 
   gotLocalStream = stream => {
+    console.log("Adding local stream.");
     this.localVideoRef.current.srcObject = stream;
     // Add local stream to connection and create offer to connect.
     localStream = stream;
-    trace("Received local stream.");
-
+    sendMessage("got user media");
+    if (isInitiator) {
+      this.maybeStart();
+    }
     //let peer = new Peer({ initiator: true, wrtc: wrtc, stream: stream });
     // peer.on("signal", function(data) {
     //   peer2.signal(data);
@@ -158,6 +177,25 @@ export default class WebRTCPeerConnection extends React.Component {
     this.remoteVideoRef.current.srcObject = mediaStream;
     remoteStream = mediaStream;
     trace("Remote peer connection received remote stream.");
+  };
+
+  maybeStart = () => {
+    console.log(
+      ">>>>>>> maybeStart() ",
+      isStarted,
+      localStream,
+      isChannelReady
+    );
+    if (!isStarted && typeof localStream !== "undefined" && isChannelReady) {
+      console.log(">>>>>> creating peer connection");
+      this.createPeerConnection();
+      pc.addStream(localStream);
+      isStarted = true;
+      console.log("isInitiator", isInitiator);
+      if (isInitiator) {
+        this.doCall();
+      }
+    }
   };
 
   handleConnection = event => {
@@ -335,6 +373,89 @@ export default class WebRTCPeerConnection extends React.Component {
       hangUpDisabled: true,
       callDisabled: false
     });
+  };
+
+  createPeerConnection = () => {
+    try {
+      pc = new RTCPeerConnection(null);
+      pc.onicecandidate = this.handleIceCandidate;
+      pc.onaddstream = this.handleRemoteStreamAdded;
+      pc.onremovestream = this.handleRemoteStreamRemoved;
+      console.log("Created RTCPeerConnnection");
+    } catch (e) {
+      console.log("Failed to create PeerConnection, exception: " + e.message);
+      alert("Cannot create RTCPeerConnection object.");
+      return;
+    }
+  };
+
+  handleIceCandidate = event => {
+    console.log("icecandidate event: ", event);
+    if (event.candidate) {
+      sendMessage({
+        type: "candidate",
+        label: event.candidate.sdpMLineIndex,
+        id: event.candidate.sdpMid,
+        candidate: event.candidate.candidate
+      });
+    } else {
+      console.log("End of candidates.");
+    }
+  };
+
+  handleCreateOfferError = event => {
+    console.log("createOffer() error: ", event);
+  };
+
+  doCall = () => {
+    console.log("Sending offer to peer");
+    pc.createOffer(this.setLocalAndSendMessage, this.handleCreateOfferError);
+  };
+
+  doAnswer = () => {
+    console.log("Sending answer to peer.");
+    pc.createAnswer().then(
+      this.setLocalAndSendMessage,
+      this.onCreateSessionDescriptionError
+    );
+  };
+
+  setLocalAndSendMessage = sessionDescription => {
+    pc.setLocalDescription(sessionDescription);
+    console.log("setLocalAndSendMessage sending message", sessionDescription);
+    sendMessage(sessionDescription);
+  };
+
+  onCreateSessionDescriptionError = error => {
+    trace("Failed to create session description: " + error.toString());
+  };
+
+  handleRemoteStreamAdded = event => {
+    console.log("Remote stream added.");
+    remoteStream = event.stream;
+    this.remoteVideoRef.current.srcObject = remoteStream;
+  };
+
+  handleRemoteStreamRemoved = event => {
+    console.log("Remote stream removed. Event: ", event);
+  };
+
+  hangup = () => {
+    console.log("Hanging up.");
+    this.stop();
+    sendMessage("bye");
+  };
+
+  handleRemoteHangup = () => {
+    console.log("Session terminated.");
+    this.stop();
+    isInitiator = false;
+  };
+
+  stop = () => {
+    isStarted = false;
+    pc.close();
+    pc = null;
   };
 
   render() {
