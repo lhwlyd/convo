@@ -29,11 +29,7 @@ const qcOpts = {
 };
 
 var pcConfig = {
-  iceServers: [
-    {
-      urls: "stun:stun.l.google.com:19302"
-    }
-  ]
+  iceServers: freeice()
 };
 
 // Define helper functions.
@@ -63,8 +59,7 @@ export default class WebRTCPeerConnection extends React.Component {
     this.state = {
       startDisabled: false,
       callDisabled: true,
-      hangUpDisabled: true,
-      servers: null
+      hangUpDisabled: true
     };
 
     window.room = prompt("Enter room name:");
@@ -217,6 +212,7 @@ export default class WebRTCPeerConnection extends React.Component {
       trace(`Using audio device: ${audioTracks[0].label}.`);
     }
 
+    // Hardcoding this
     isChannelReady = true;
     sendMessage("got user media");
     if (isInitiator) {
@@ -283,12 +279,15 @@ export default class WebRTCPeerConnection extends React.Component {
   handleRemoteStreamAdded = event => {
     console.log("Remote stream added.");
     remoteStreams.add(event.stream);
-    this.remoteVideoRef.current.srcObject = event.stream;
+    //this.remoteVideoRef.current.srcObject = event.stream;
   };
 
   handleRemoteStreamRemoved = event => {
     console.log(event.stream);
     console.log("Remote stream removed. Event: ", event);
+    this.remoteStreams = this.remoteStreams.filter(
+      stream => stream !== event.stream
+    );
   };
 
   hangup = () => {
@@ -320,11 +319,13 @@ export default class WebRTCPeerConnection extends React.Component {
           muted
           style={{ width: "240px", height: "180px" }}
         />
-        <video
-          ref={this.remoteVideoRef}
-          autoPlay
-          style={{ width: "240px", height: "180px" }}
-        />
+        {this.remoteStreams.forEach(stream => {
+          <video
+            srcObject={stream}
+            autoPlay
+            style={{ width: "240px", height: "180px" }}
+          />;
+        })}
 
         <div>
           <button onClick={this.start} disabled={startDisabled}>
