@@ -15,6 +15,8 @@ var app = http
 
 var io = socketIO.listen(app);
 
+let curRoom;
+
 io.sockets.on("connection", function(socket) {
   // convenience function to log server messages on the client
   function log() {
@@ -26,7 +28,8 @@ io.sockets.on("connection", function(socket) {
   socket.on("message", function(message) {
     log("Client said: ", message);
     // for a real app, would be room-only (not broadcast)
-    socket.broadcast.emit("message", message);
+    //socket.broadcast.emit("message", message);
+    socket.broadcast.to(curRoom).emit("message", message);
   });
 
   socket.on("create or join", function(room) {
@@ -43,6 +46,7 @@ io.sockets.on("connection", function(socket) {
     if (numClients === 0) {
       socket.join(room);
       log("Client ID " + socket.id + " created room " + room);
+      curRoom = room;
       socket.emit("created", room, socket.id);
     } else if (numClients === 1) {
       log("Client ID " + socket.id + " joined room " + room);

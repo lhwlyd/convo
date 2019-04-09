@@ -33,7 +33,7 @@ DB_USERNAME +
 // connects our back end code with the database
 mongoose.connect(
   dbRoute,
-  { dbName: "convo" }
+  { dbName: "convo", useNewUrlParser: true }
 );
 
 let db = mongoose.connection;
