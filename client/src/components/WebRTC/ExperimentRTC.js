@@ -12,6 +12,7 @@ let remoteStreams = [];
 var isChannelReady = false;
 var isStarted = false;
 let isInitiator = false;
+var turnReady;
 
 // Set up to exchange only video.
 const offerOptions = {
@@ -21,12 +22,6 @@ const offerOptions = {
 
 // Define initial start time of the call (defined as connection between peers).
 let startTime = null;
-
-// initialise a configuration for one stun server
-const qcOpts = {
-  room: "icetest",
-  iceServers: freeice()
-};
 
 var pcConfig = {
   iceServers: freeice()
@@ -52,6 +47,46 @@ function trace(text) {
   console.log(now, text);
 }
 
+function requestTurn(turnURL) {
+  var turnExists = false;
+  for (var i in pcConfig.iceServers) {
+    if (pcConfig.iceServers[i].urls.substr(0, 5) === "turn:") {
+      turnExists = true;
+      turnReady = true;
+      break;
+    }
+  }
+  if (!turnExists) {
+    console.log("Getting TURN server from ", turnURL);
+    // No TURN server. Get one from computeengineondemand.appspot.com:
+    var xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState === 4 && xhr.status === 200) {
+        var turnServer = JSON.parse(xhr.responseText);
+        console.log("Got TURN server: ", turnServer);
+        pcConfig.iceServers.push({
+          urls: "turn:" + turnServer.username + "@" + turnServer.turn,
+          credential: turnServer.password
+        });
+        turnReady = true;
+      }
+    };
+    xhr.open("GET", turnURL, true);
+    xhr.send();
+  }
+}
+
+if (location.hostname !== "localhost") {
+  console.log("Running requestTurn");
+  requestTurn(
+    "https://computeengineondemand.appspot.com/turn?username=41784574&key=4080218913"
+  );
+}
+
+window.onbeforeunload = function() {
+  sendMessage("bye");
+};
+
 export default class WebRTCPeerConnection extends React.Component {
   constructor() {
     super();
@@ -70,21 +105,28 @@ export default class WebRTCPeerConnection extends React.Component {
       console.log("Message from client: Asking to join room " + window.room);
       socket.emit("create or join", window.room);
     }
-
-    socket.on("created", function(room, clientId) {
+    socket.on("created", function(room) {
+      console.log("Created room " + room);
       isInitiator = true;
     });
 
     socket.on("full", function(room) {
-      console.log("Message from client: Room " + room + " is full :^(");
+      console.log("Room " + room + " is full");
+    });
+
+    socket.on("join", function(room) {
+      console.log("Another peer made a request to join room " + room);
+      console.log("This peer is the initiator of room " + room + "!");
+      isChannelReady = true;
+    });
+
+    socket.on("joined", function(room) {
+      console.log("joined: " + room);
+      isChannelReady = true;
     });
 
     socket.on("ipaddr", function(ipaddr) {
       console.log("Message from client: Server IP address is " + ipaddr);
-    });
-
-    socket.on("joined", function(room, clientId) {
-      isInitiator = false;
     });
 
     socket.on("log", function(array) {
@@ -222,7 +264,14 @@ export default class WebRTCPeerConnection extends React.Component {
 
   createPeerConnection = () => {
     try {
-      pc = new RTCPeerConnection(null);
+      try {
+        pc = new RTCPeerConnection(pcConfig.iceServers);
+      } catch (e) {
+        console.log(
+          "Failed to connect to ice STUN servers, exception: " + e.message
+        );
+        pc = new RTCPeerConnection(null);
+      }
       pc.onicecandidate = this.handleIceCandidate;
       pc.onaddstream = this.handleRemoteStreamAdded;
       pc.onremovestream = this.handleRemoteStreamRemoved;
